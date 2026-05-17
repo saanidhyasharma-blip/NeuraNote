@@ -159,7 +159,7 @@ export async function POST(req: Request) {
       data: {
         title,
         content,
-        userId: user.id,
+        user: { connect: { id: user.id } },
         category: categoryRelation,
         tags: tagConnectOrCreate.length > 0 ? { connectOrCreate: tagConnectOrCreate } : undefined,
       },
