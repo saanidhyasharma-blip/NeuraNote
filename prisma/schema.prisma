@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  
+  notes      Note[]
+  categories Category[]
+  aiLogs     AIUsageLog[]
+
+  @@index([email])
+}
+
+model Note {
+  id          String   @id @default(cuid())
+  title       String
+  content     String   @db.Text
+  summary     String?  @db.Text
+  actionItems Json?    // JSON array of strings or objects: {text: string, completed: boolean}
+  isArchived  Boolean  @default(false)
+  isPublic    Boolean  @default(false)
+  isPinned    Boolean  @default(false)
+  isFavorite  Boolean  @default(false)
+  shareId     String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  
+  tags        Tag[]     @relation("NoteToTag")
+  aiLogs      AIUsageLog[]
+
+  @@index([userId])
+  @@index([shareId])
+  @@index([categoryId])
+}
+
+model Tag {
+  id     String @id @default(cuid())
+  name   String
+  userId String
+  notes  Note[] @relation("NoteToTag")
+
+  @@unique([name, userId])
+  @@index([userId])
+}
+
+model Category {
+  id     String @id @default(cuid())
+  name   String
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notes  Note[]
+
+  @@unique([name, userId])
+  @@index([userId])
+}
+
+model AIUsageLog {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  noteId     String?
+  note       Note?    @relation(fields: [noteId], references: [id], onDelete: SetNull)
+  actionType String   // e.g. "SUMMARY", "ACTION_ITEMS", "TITLE", "IMPROVE"
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([noteId])
+}
